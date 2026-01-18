@@ -1,22 +1,69 @@
-version: "3"
+version: '3.9'
 
 services:
+  # API Gateway
   api-gateway:
-    build: ./api-gateway
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
     ports:
       - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://myuser:mypass@postgres:5432/microservices
+      - JWT_SECRET=supersecret
+    depends_on:
+      - postgres
+      - task-service
+      - user-service
+      - notification-service
 
-  user-service:
-    build: ./user-service
-    ports:
-      - "8001:8000"
-
+  # Task Service
   task-service:
-    build: ./task-service
+    build:
+      context: ./task-service
+      dockerfile: Dockerfile
     ports:
-      - "8002:8000"
+      - "8001:8001"
+    environment:
+      - DATABASE_URL=postgresql://myuser:mypass@postgres:5432/microservices
+    depends_on:
+      - postgres
 
-  notification-service:
-    build: ./notification-service
+  # User Service
+  user-service:
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile
     ports:
-      - "8003:8000"
+      - "8002:8002"
+    environment:
+      - DATABASE_URL=postgresql://myuser:mypass@postgres:5432/microservices
+    depends_on:
+      - postgres
+
+  # Notification Service
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    ports:
+      - "8003:8003"
+    environment:
+      - DATABASE_URL=postgresql://myuser:mypass@postgres:5432/microservices
+    depends_on:
+      - postgres
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypass
+      POSTGRES_DB: microservices
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
