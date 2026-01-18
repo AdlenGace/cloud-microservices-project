@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 8000
 
 # Command to run the service
-CMD ["python", "app.py"]
+CMD ["python", "main.py"]
