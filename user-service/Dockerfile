@@ -18,4 +18,4 @@ EXPOSE 8000
 
 # Command to run the service
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8003"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8002"]
