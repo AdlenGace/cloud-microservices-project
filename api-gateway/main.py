@@ -8,7 +8,6 @@ app = FastAPI(title="API Gateway")
 # ---------------------------
 # Internal service URLs
 # ---------------------------
-# Use the mapped container ports (host port mapping)
 USER_SERVICE_URL = "http://user-service:8002"
 TASK_SERVICE_URL = "http://task-service:8001"
 
@@ -34,6 +33,7 @@ def health():
 # ---------------------------
 @app.post("/login")
 def login(user: UserLogin):
+    # Forward login request to user-service as JSON
     response = requests.post(
         f"{USER_SERVICE_URL}/login",
         json={"username": user.username, "password": user.password}
@@ -42,6 +42,7 @@ def login(user: UserLogin):
     if response.status_code != 200:
         raise HTTPException(status_code=401, detail="Login failed")
 
+    # Generate JWT token at the gateway
     token = create_access_token({"sub": user.username})
     return {"access_token": token, "token_type": "bearer"}
 
@@ -65,9 +66,10 @@ def authenticate(authorization: str = Header(...)):
 # ---------------------------
 @app.post("/tasks")
 def create_task(task: TaskCreate, user=authenticate):
+    # Forward task creation as JSON to task-service
     response = requests.post(
         f"{TASK_SERVICE_URL}/tasks",
-        json={"title": task.title}  # <--- send JSON, not params
+        json={"title": task.title}
     )
 
     if response.status_code != 200:
