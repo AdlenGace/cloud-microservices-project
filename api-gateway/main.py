@@ -4,8 +4,12 @@ from security import create_access_token, verify_token
 
 app = FastAPI(title="API Gateway")
 
-USER_SERVICE_URL = "http://host.docker.internal:8001"
-TASK_SERVICE_URL = "http://host.docker.internal:8002"
+USER_SERVICE_URL = "http://user-service:8001"
+TASK_SERVICE_URL = "http://task-service:8002"
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 
 @app.post("/login")
 def login(username: str, password: str):
@@ -34,7 +38,8 @@ def authenticate(authorization: str = Header(...)):
 
 @app.post("/tasks")
 def create_task(title: str, user=authenticate):
-    return requests.post(
+    response = requests.post(
         f"{TASK_SERVICE_URL}/tasks",
         params={"title": title}
-    ).json()
+    )
+    return response.json()
