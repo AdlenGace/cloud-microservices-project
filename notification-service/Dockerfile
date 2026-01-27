@@ -16,5 +16,5 @@ COPY . .
 # Expose the port (adjust per service)
 EXPOSE 8000
 
-# Command to run the service
-CMD ["python", "main.py"]
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001"]
