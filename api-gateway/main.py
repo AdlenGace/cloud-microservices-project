@@ -67,7 +67,7 @@ def authenticate(authorization: str = Header(...)):
 def create_task(task: TaskCreate, user=authenticate):
     response = requests.post(
         f"{TASK_SERVICE_URL}/tasks",
-        json={"title": task.title}
+        json={"title": task.title}  # <--- send JSON, not params
     )
 
     if response.status_code != 200:
