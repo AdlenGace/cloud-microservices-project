@@ -1,29 +1,53 @@
 from fastapi import FastAPI, HTTPException, Header
+from pydantic import BaseModel
 import requests
 from security import create_access_token, verify_token
 
 app = FastAPI(title="API Gateway")
 
-USER_SERVICE_URL = "http://user-service:8001"
-TASK_SERVICE_URL = "http://task-service:8002"
+# ---------------------------
+# Internal service URLs
+# ---------------------------
+# Use the mapped container ports (host port mapping)
+USER_SERVICE_URL = "http://user-service:8002"
+TASK_SERVICE_URL = "http://task-service:8001"
 
+# ---------------------------
+# Request Models
+# ---------------------------
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+class TaskCreate(BaseModel):
+    title: str
+
+# ---------------------------
+# Healthcheck
+# ---------------------------
 @app.get("/health")
 def health():
     return {"status": "ok"}
 
+# ---------------------------
+# Login Endpoint
+# ---------------------------
 @app.post("/login")
-def login(username: str, password: str):
+def login(user: UserLogin):
     response = requests.post(
         f"{USER_SERVICE_URL}/login",
-        params={"username": username, "password": password}
+        json={"username": user.username, "password": user.password}
     )
 
     if response.status_code != 200:
         raise HTTPException(status_code=401, detail="Login failed")
 
-    token = create_access_token({"sub": username})
+    token = create_access_token({"sub": user.username})
     return {"access_token": token, "token_type": "bearer"}
 
+# ---------------------------
+# Authentication dependency
+# ---------------------------
 def authenticate(authorization: str = Header(...)):
     if not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Invalid token format")
@@ -36,10 +60,17 @@ def authenticate(authorization: str = Header(...)):
 
     return payload
 
+# ---------------------------
+# Task Creation Endpoint
+# ---------------------------
 @app.post("/tasks")
-def create_task(title: str, user=authenticate):
+def create_task(task: TaskCreate, user=authenticate):
     response = requests.post(
         f"{TASK_SERVICE_URL}/tasks",
-        params={"title": title}
+        json={"title": task.title}
     )
+
+    if response.status_code != 200:
+        raise HTTPException(status_code=response.status_code, detail=response.text)
+
     return response.json()
